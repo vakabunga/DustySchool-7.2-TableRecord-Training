@@ -26,32 +26,51 @@ function sendResultForm() {
     event.preventDefault();
     statusField.textContent = '';
     inputResult.classList.remove('cell_border-red');
+    sendButton.disabled = true;
+    inputName.classList.remove('cell_border-red')
+    inputResult.classList.remove('cell_border-red');
 
     const name = inputName.value;
     const result = inputResult.value;
 
-    if (name === '' || result === '') {
-      statusField.textContent = 'Заполните все поля формы';
-      return;
-    }
-
-    if (isNaN(+result) || typeof result === 'number') {
-      statusField.textContent = 'Введите число';
-      inputResult.value = '';
-      inputResult.classList.add('cell_border-red');
-      return;
-    }
-
-    inputName.value = '';
-    inputResult.value = '';
-    inputName.focus();
-
-    fetch(`${SERVER_DOMAIN_NAME}/result?name=${name}&result=${+result}`, {
-      method: 'POST'
+    fetch(`${SERVER_DOMAIN_NAME}/result`, {
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        "name": name,
+        "result": result
+      })
     })
       .then(response => response.json())
       .then((data) => {
-        statusField.textContent = data;
+        statusField.textContent = data.message;
+
+        if (data.error) {
+          throw new Error('error', { cause: data });
+        }
+
+        inputName.value = '';
+        inputResult.value = '';
+        inputName.focus();
       })
-  })
-}
+      .catch(errorData => {
+        const { error, message } = errorData.cause;
+        statusField.textContent = message;
+        console.log(error);
+
+        if (error === '1') {
+          inputName.classList.add('cell_border-red')
+          inputResult.classList.add('cell_border-red');
+        }
+
+        if (error === '2') {
+          inputResult.classList.add('cell_border-red');
+        }
+      })
+      .finally(() => {
+        sendButton.disabled = false;
+      });
+  });
+};

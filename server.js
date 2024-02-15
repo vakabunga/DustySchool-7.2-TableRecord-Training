@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const queryString = require('querystring');
 const fs = require('fs');
 
 const app = express();
@@ -30,33 +29,73 @@ app.get('/results', (req, res) => {
 });
 
 app.post('/result', (req, res) => {
-  const params = queryString.parse(String(req.url).slice(8));
-  let playerPlace;
+  const newRecord = req.body;
+  const newName = newRecord.name;
+  const newResult = newRecord.result;
+  let playerPlace = -1;
 
-  const newResult = {
-    'name': params.name,
-    'result': +params.result
+  if (newName === '') {
+    res.status(404);
+
+    res.json({
+      error: '1',
+      message: 'Заполните все поля формы'
+    });
+
+    return;
   }
 
-  if (results.length < 11 || results.some(element => newResult.result > element.result)) {
-    results.push(newResult);
-    results.sort((a, b) => b.result - a.result);
+  if (isNaN(+newResult) || typeof +newResult !== 'number' || newResult === '') {
+    res.status(404);
+
+    res.json({
+      error: '2',
+      message: 'Введите число'
+    });
+
+    return;
   }
 
-  if (results.length === 11) {
-    results.pop();
-  }
+  for (let i = 0; i < results.length; i++) {
+    const { result } = results[i];
 
-  fs.writeFileSync('results.txt', JSON.stringify(results));
+    if (+newResult >= +result) {
+      results.splice(i, 0, newRecord);
+      playerPlace = i + 1;
 
-  playerPlace = results.findIndex((element, index) => {
-    if (element.result === newResult.result && element.name === newResult.name) {
-      return element.result === newResult.result;
+      if (results.length === 11) {
+        results.pop();
+      }
+
+      fs.writeFileSync('results.txt', JSON.stringify(results));
+
+      res.json({
+        error: 0,
+        message: `Результат в таблице рекордов на ${playerPlace} месте`
+      });
+
+      return;
     }
-  }) + 1;
+  }
 
-  responseText = playerPlace ? `Результат в таблице рекордов на ${playerPlace} месте` : 'Результат не попал в список рекордов';
-  res.json(responseText);
+  if (results.length < 10) {
+    results.push(newRecord);
+    playerPlace = results.length;
+
+    fs.writeFileSync('results.txt', JSON.stringify(results));
+
+    res.json({
+      error: 0,
+      message: `Результат в таблице рекордов на ${playerPlace} месте`
+    });
+
+    return;
+  }
+
+  res.json({
+    error: 0,
+    message: `Результат не попал в таблицу рекордов`
+  });
 });
 
 app.listen(port, () => {
