@@ -58,7 +58,6 @@ function sendResultForm() {
       .catch(errorData => {
         const { error, message } = errorData.cause;
         statusField.textContent = message;
-        console.log(error);
 
         if (error === '1') {
           inputName.classList.add('cell_border-red')

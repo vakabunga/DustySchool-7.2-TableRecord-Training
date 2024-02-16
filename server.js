@@ -6,13 +6,12 @@ const app = express();
 const port = 3000;
 
 function checkFileExistsSync(filepath) {
-  let flag = true;
   try {
     fs.accessSync(filepath, fs.constants.F_OK);
   } catch (e) {
-    flag = false;
+    return false;
   }
-  return flag;
+  return true;
 }
 
 if (!checkFileExistsSync('results.txt')) {
@@ -93,7 +92,7 @@ app.post('/result', (req, res) => {
   }
 
   res.json({
-    error: 0,
+    error: 10,
     message: `Результат не попал в таблицу рекордов`
   });
 });
